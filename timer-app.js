@@ -9,6 +9,9 @@
   // State
   let timers = [];
   let idSeq = 1;
+  // Store input values outside render
+  let timerNameValue = "";
+  let timerDurationValue = "60";
 
   // DOM roots
   const root = document.getElementById("timer-app-root");
@@ -18,8 +21,8 @@
     root.innerHTML = `
       <h2>Timer App</h2>
       <div class="timer-inputs">
-        <input type="text" id="timerName" placeholder="Timer Name" />
-        <input type="number" id="timerDuration" min="1" value="60" />
+        <input type="text" id="timerName" placeholder="Timer Name" value="${timerNameValue.replace(/"/g, '&quot;')}" />
+        <input type="number" id="timerDuration" min="1" value="${timerDurationValue}" />
         <button id="addTimerBtn">Add Timer</button>
       </div>
       <ul class="timer-list">
@@ -54,6 +57,18 @@
     const timerDurationInput = root.querySelector("#timerDuration");
     const addBtn = root.querySelector("#addTimerBtn");
 
+    // Restore input values after render (in case browser autocorrects, etc.)
+    timerNameInput.value = timerNameValue;
+    timerDurationInput.value = timerDurationValue;
+
+    // Save values on input
+    timerNameInput.addEventListener("input", function () {
+      timerNameValue = timerNameInput.value;
+    });
+    timerDurationInput.addEventListener("input", function () {
+      timerDurationValue = timerDurationInput.value;
+    });
+
     // Add Timer event
     addBtn.onclick = function () {
       const name = timerNameInput.value.trim();
@@ -67,8 +82,9 @@
         running: false,
         intervalId: null,
       });
-      timerNameInput.value = "";
-      timerDurationInput.value = "60";
+      // Reset input values
+      timerNameValue = "";
+      timerDurationValue = "60";
       render();
     };
 
