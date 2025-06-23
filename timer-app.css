@@ -1,0 +1,80 @@
+body {
+  font-family: sans-serif;
+  background: #f6f8fa;
+}
+
+#timer-app-root {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px 0 #0001;
+}
+
+h2 {
+  text-align: center;
+}
+
+.timer-inputs {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.timer-inputs input[type="text"], .timer-inputs input[type="number"] {
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.timer-inputs input[type="number"] {
+  max-width: 80px;
+}
+
+.timer-inputs button {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: none;
+  background: #2ea44f;
+  color: #fff;
+  cursor: pointer;
+}
+
+.timer-inputs button:active {
+  background: #218838;
+}
+
+.timer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.timer-item {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-controls button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25em;
+  margin-right: 4px;
+  color: #444;
+}
+
+.timer-controls button:last-child {
+  margin-right: 0;
+}
+
+.timer-controls button:hover {
+  color: #0366d6;
+}
