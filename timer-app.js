@@ -18,38 +18,57 @@
 
   // Render function
   function render() {
+    const emptyState = timers.length === 0 ? `
+      <div class="empty-state">
+        <h3>No timers yet</h3>
+        <p>Add a timer above to get started!</p>
+      </div>
+    ` : '';
+
     root.innerHTML = `
-      <h2>Timer App</h2>
+      <h2>⏱️ Timer App</h2>
       <div class="timer-inputs">
-        <input type="text" id="timerName" placeholder="Timer Name" value="${timerNameValue.replace(/"/g, '&quot;')}" />
-        <input type="number" id="timerDuration" min="1" value="${timerDurationValue}" />
-        <button id="addTimerBtn">Add Timer</button>
+        <div class="input-group">
+          <input type="text" id="timerName" placeholder="Timer Name (e.g., Break, Workout)" value="${timerNameValue.replace(/"/g, '&quot;')}" />
+          <input type="number" id="timerDuration" min="1" placeholder="Minutes" value="${timerDurationValue}" />
+        </div>
+        <button id="addTimerBtn">➕ Add Timer</button>
       </div>
       <ul class="timer-list">
         ${timers
           .map(
-            (timer) => `
-          <li class="timer-item" data-id="${timer.id}">
-            <strong>${timer.name}</strong> &mdash; <span class="timer-rem">${fmt(timer.remaining)}</span>
-            <div class="timer-controls">
-              ${
-                !timer.running && timer.remaining > 0
-                  ? `<button class="start-btn" title="Start">&#9654;</button>`
-                  : ""
-              }
-              ${
-                timer.running
-                  ? `<button class="pause-btn" title="Pause">&#9208;</button>`
-                  : ""
-              }
-              <button class="reset-btn" title="Reset">&#128260;</button>
-              <button class="remove-btn" title="Delete">&#128465;</button>
-            </div>
-          </li>
-        `
+            (timer) => {
+              const isRunning = timer.running;
+              const isFinished = timer.remaining === 0;
+              const timerClasses = `timer-item ${isRunning ? 'running' : ''} ${isFinished ? 'finished' : ''}`;
+              
+              return `
+                <li class="${timerClasses}" data-id="${timer.id}">
+                  <div class="timer-header">
+                    <h3 class="timer-name">${timer.name}</h3>
+                  </div>
+                  <div class="timer-display">${fmt(timer.remaining)}</div>
+                  <div class="timer-controls">
+                    ${
+                      !timer.running && timer.remaining > 0
+                        ? `<button class="start-btn" title="Start Timer">▶️</button>`
+                        : ""
+                    }
+                    ${
+                      timer.running
+                        ? `<button class="pause-btn" title="Pause Timer">⏸️</button>`
+                        : ""
+                    }
+                    <button class="reset-btn" title="Reset Timer">🔄</button>
+                    <button class="remove-btn" title="Delete Timer">🗑️</button>
+                  </div>
+                </li>
+              `;
+            }
           )
           .join("")}
       </ul>
+      ${emptyState}
     `;
 
     // Input references
@@ -73,12 +92,31 @@
     addBtn.onclick = function () {
       const name = timerNameInput.value.trim();
       const duration = parseInt(timerDurationInput.value, 10) || 0;
-      if (!name || duration <= 0) return;
+      if (!name || duration <= 0) {
+        // Add visual feedback for invalid input
+        if (!name) {
+          timerNameInput.style.borderColor = 'var(--danger-color)';
+          setTimeout(() => {
+            timerNameInput.style.borderColor = '';
+          }, 2000);
+        }
+        if (duration <= 0) {
+          timerDurationInput.style.borderColor = 'var(--danger-color)';
+          setTimeout(() => {
+            timerDurationInput.style.borderColor = '';
+          }, 2000);
+        }
+        return;
+      }
+      
+      // Convert minutes to seconds
+      const durationInSeconds = duration * 60;
+      
       timers.push({
         id: idSeq++,
         name,
-        duration,
-        remaining: duration,
+        duration: durationInSeconds,
+        remaining: durationInSeconds,
         running: false,
         intervalId: null,
       });
@@ -87,6 +125,15 @@
       timerDurationValue = "60";
       render();
     };
+
+    // Allow Enter key to add timer
+    [timerNameInput, timerDurationInput].forEach(input => {
+      input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+          addBtn.click();
+        }
+      });
+    });
 
     // Timer controls
     root.querySelectorAll(".timer-item").forEach((li) => {
@@ -104,6 +151,29 @@
               timer.running = false;
               clearInterval(timer.intervalId);
               timer.intervalId = null;
+              // Play notification sound (if supported)
+              try {
+                // Create a simple beep sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.2);
+              } catch (e) {
+                // Fallback: browser notification if sound fails
+                console.log('Timer finished:', timer.name);
+              }
+              // Show browser notification if permitted
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`Timer finished: ${timer.name}`, {
+                  body: 'Your timer has completed!',
+                  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>'
+                });
+              }
             }
             render();
           }, 1000);
@@ -137,6 +207,11 @@
         render();
       });
     });
+  }
+
+  // Request notification permission on page load
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
   }
 
   // Initial render
